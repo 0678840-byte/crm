@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Орбита — CRM</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --bg: #0f0f13;
+    --bg2: #16161d;
+    --bg3: #1e1e28;
+    --border: #2a2a38;
+    --accent: #7c6af7;
+    --accent2: #a78bfa;
+    --hot: #f97316;
+    --warm: #eab308;
+    --cold: #6b7280;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --text: #e8e8f0;
+    --text2: #9898b0;
+    --text3: #5a5a72;
+    --card: #1a1a24;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 220px; min-height: 100vh; background: var(--bg2);
+    border-right: 1px solid var(--border); display: flex; flex-direction: column;
+    position: fixed; left: 0; top: 0; bottom: 0; z-index: 100;
+  }
+  .logo {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo-title {
+    font-size: 20px; font-weight: 700; letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .logo-sub { font-size: 11px; color: var(--text3); margin-top: 2px; letter-spacing: 0.5px; text-transform: uppercase; }
+
+  .nav { flex: 1; padding: 12px 0; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 20px; font-size: 13px; color: var(--text2);
+    cursor: pointer; transition: all 0.15s; border-left: 2px solid transparent;
+    user-select: none;
+  }
+  .nav-item:hover { color: var(--text); background: var(--bg3); }
+  .nav-item.active { color: var(--accent2); border-left-color: var(--accent); background: rgba(124,106,247,0.08); }
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+  .nav-badge {
+    margin-left: auto; background: var(--danger); color: #fff;
+    font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 10px;
+  }
+
+  .sidebar-bottom { padding: 16px 20px; border-top: 1px solid var(--border); }
+  .user-pill {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: 8px; background: var(--bg3);
+    cursor: pointer;
+  }
+  .user-avatar {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0;
+  }
+  .user-name { font-size: 12px; font-weight: 500; }
+  .user-role { font-size: 10px; color: var(--text3); }
+
+  /* MAIN */
+  .main { margin-left: 220px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+  .topbar {
+    padding: 16px 28px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--bg2); position: sticky; top: 0; z-index: 50;
+  }
+  .page-title { font-size: 16px; font-weight: 600; }
+  .topbar-actions { display: flex; gap: 10px; align-items: center; }
+
+  .btn {
+    padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500;
+    cursor: pointer; border: none; transition: all 0.15s;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent2); }
+  .btn-ghost { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--accent); }
+
+  .content { padding: 24px 28px; flex: 1; }
+
+  /* PAGES */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* STATS ROW */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px; position: relative; overflow: hidden;
+  }
+  .stat-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  }
+  .stat-card.purple::before { background: var(--accent); }
+  .stat-card.orange::before { background: var(--hot); }
+  .stat-card.yellow::before { background: var(--warm); }
+  .stat-card.green::before { background: var(--success); }
+  .stat-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .stat-value { font-size: 28px; font-weight: 700; letter-spacing: -1px; }
+  .stat-sub { font-size: 11px; color: var(--text3); margin-top: 4px; }
+  .stat-delta { font-size: 11px; margin-top: 6px; }
+  .stat-delta.up { color: var(--success); }
+  .stat-delta.down { color: var(--danger); }
+
+  /* FUNNEL */
+  .funnel-grid { display: grid; grid-template-columns: 1fr 340px; gap: 20px; margin-bottom: 24px; }
+  .funnel-stages { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .funnel-title { font-size: 13px; font-weight: 600; margin-bottom: 16px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px; }
+  .stage-row {
+    display: flex; align-items: center; gap: 12px; padding: 10px 0;
+    border-bottom: 1px solid var(--border); cursor: pointer;
+    transition: background 0.1s; border-radius: 6px; padding: 10px 8px;
+  }
+  .stage-row:hover { background: var(--bg3); }
+  .stage-num { font-size: 11px; color: var(--text3); width: 16px; }
+  .stage-name { flex: 1; font-size: 13px; }
+  .stage-bar-wrap { width: 120px; height: 6px; background: var(--bg3); border-radius: 3px; }
+  .stage-bar { height: 6px; border-radius: 3px; background: var(--accent); }
+  .stage-count { font-size: 12px; color: var(--text2); width: 30px; text-align: right; }
+  .stage-money { font-size: 12px; color: var(--success); width: 80px; text-align: right; font-weight: 500; }
+  .stage-conv { font-size: 11px; color: var(--text3); width: 40px; text-align: right; }
+
+  /* SCORING PANEL */
+  .scoring-panel { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .score-item { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .score-item:last-child { border-bottom: none; }
+  .score-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .score-dot.hot { background: var(--hot); box-shadow: 0 0 8px var(--hot); }
+  .score-dot.warm { background: var(--warm); box-shadow: 0 0 8px var(--warm); }
+  .score-dot.cold { background: var(--cold); }
+  .score-label { flex: 1; font-size: 13px; }
+  .score-range { font-size: 11px; color: var(--text3); }
+  .score-count { font-size: 20px; font-weight: 700; }
+  .score-count.hot { color: var(--hot); }
+  .score-count.warm { color: var(--warm); }
+  .score-count.cold { color: var(--cold); }
+
+  /* LEADS TABLE */
+  .table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .table-header {
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .table-filters { display: flex; gap: 8px; }
+  .filter-btn {
+    padding: 5px 12px; border-radius: 6px; font-size: 12px; cursor: pointer;
+    border: 1px solid var(--border); background: transparent; color: var(--text2);
+    transition: all 0.15s;
+  }
+  .filter-btn.active { background: rgba(124,106,247,0.15); border-color: var(--accent); color: var(--accent2); }
+  table { width: 100%; border-collapse: collapse; }
+  th { padding: 10px 16px; text-align: left; font-size: 11px; font-weight: 500; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+  td { padding: 12px 16px; font-size: 13px; border-bottom: 1px solid rgba(42,42,56,0.5); }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  tr:last-child td { border-bottom: none; }
+
+  .score-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 500;
+  }
+  .score-badge.hot { background: rgba(249,115,22,0.15); color: var(--hot); }
+  .score-badge.warm { background: rgba(234,179,8,0.15); color: var(--warm); }
+  .score-badge.cold { background: rgba(107,114,128,0.15); color: var(--cold); }
+
+  .status-badge {
+    display: inline-block; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 500;
+  }
+  .status-badge.active { background: rgba(34,197,94,0.15); color: var(--success); }
+  .status-badge.thinking { background: rgba(234,179,8,0.15); color: var(--warm); }
+  .status-badge.unreachable { background: rgba(239,68,68,0.15); color: var(--danger); }
+  .status-badge.postponed { background: rgba(107,114,128,0.15); color: var(--cold); }
+  .status-badge.repeat { background: rgba(124,106,247,0.15); color: var(--accent2); }
+
+  .stage-pill {
+    display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11px;
+    background: var(--bg3); color: var(--text2); border: 1px solid var(--border);
+  }
+
+  .action-btn {
+    padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer;
+    border: 1px solid var(--border); background: transparent; color: var(--text2);
+    transition: all 0.15s;
+  }
+  .action-btn:hover { border-color: var(--accent); color: var(--accent2); }
+
+  /* TASKS */
+  .tasks-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .task-col { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .task-col-header {
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .task-col-title { font-size: 13px; font-weight: 600; }
+  .task-count-badge {
+    padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600;
+  }
+  .task-count-badge.urgent { background: rgba(239,68,68,0.15); color: var(--danger); }
+  .task-count-badge.today { background: rgba(234,179,8,0.15); color: var(--warm); }
+
+  .task-item {
+    padding: 14px 20px; border-bottom: 1px solid rgba(42,42,56,0.5);
+    display: flex; gap: 12px; align-items: flex-start;
+  }
+  .task-check {
+    width: 16px; height: 16px; border-radius: 4px; border: 1px solid var(--border);
+    flex-shrink: 0; margin-top: 1px; cursor: pointer; transition: all 0.15s;
+  }
+  .task-check:hover { border-color: var(--accent); }
+  .task-check.done { background: var(--accent); border-color: var(--accent); }
+  .task-body { flex: 1; }
+  .task-what { font-size: 13px; margin-bottom: 4px; }
+  .task-who { font-size: 11px; color: var(--text3); }
+  .task-time {
+    font-size: 11px; padding: 2px 6px; border-radius: 4px;
+    flex-shrink: 0;
+  }
+  .task-time.overdue { background: rgba(239,68,68,0.15); color: var(--danger); }
+  .task-time.today { background: rgba(234,179,8,0.15); color: var(--warm); }
+  .task-time.future { background: rgba(34,197,94,0.1); color: var(--success); }
+
+  /* ALERTS */
+  .alerts-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 24px; }
+  .alert-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 18px; border-radius: 10px; border-left: 3px solid;
+    background: var(--card);
+  }
+  .alert-item.red { border-left-color: var(--danger); }
+  .alert-item.yellow { border-left-color: var(--warm); }
+  .alert-icon { font-size: 18px; }
+  .alert-text { flex: 1; font-size: 13px; }
+  .alert-text strong { color: var(--text); }
+  .alert-text span { color: var(--text2); }
+  .alert-action { font-size: 12px; color: var(--accent2); cursor: pointer; white-space: nowrap; }
+
+  /* REPORTS */
+  .reports-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+  .report-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  .report-card-title { font-size: 13px; font-weight: 600; margin-bottom: 16px; color: var(--text2); }
+  .report-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(42,42,56,0.4); }
+  .report-row:last-child { border-bottom: none; }
+  .report-row-label { font-size: 12px; color: var(--text2); }
+  .report-row-value { font-size: 13px; font-weight: 500; }
+
+  /* FORECAST */
+  .forecast-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+  .forecast-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px; text-align: center; position: relative; overflow: hidden;
+  }
+  .forecast-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+  .forecast-value { font-size: 32px; font-weight: 700; letter-spacing: -1px; }
+  .forecast-value.hard { color: var(--success); }
+  .forecast-value.soft { color: var(--warm); }
+  .forecast-value.pipe { color: var(--accent2); }
+  .forecast-desc { font-size: 11px; color: var(--text3); margin-top: 6px; }
+  .forecast-horizon { font-size: 10px; color: var(--text3); margin-top: 4px; }
+
+  /* REJECTION */
+  .rejection-list { display: flex; flex-direction: column; gap: 8px; }
+  .rejection-row { display: flex; align-items: center; gap: 12px; }
+  .rejection-label { font-size: 12px; color: var(--text2); width: 200px; flex-shrink: 0; }
+  .rejection-bar-wrap { flex: 1; height: 8px; background: var(--bg3); border-radius: 4px; }
+  .rejection-bar { height: 8px; border-radius: 4px; background: var(--accent); }
+  .rejection-pct { font-size: 12px; color: var(--text); width: 36px; text-align: right; font-weight: 500; }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    z-index: 200; align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 16px;
+    width: 560px; max-height: 90vh; overflow-y: auto;
+  }
+  .modal-header {
+    padding: 20px 24px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-title { font-size: 15px; font-weight: 600; }
+  .modal-close { font-size: 20px; cursor: pointer; color: var(--text3); background: none; border: none; color: var(--text2); }
+  .modal-body { padding: 24px; }
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 12px; color: var(--text3); margin-bottom: 6px; display: block; }
+  .form-input {
+    width: 100%; padding: 9px 12px; border-radius: 8px;
+    background: var(--bg3); border: 1px solid var(--border); color: var(--text);
+    font-size: 13px; font-family: inherit; outline: none; transition: border-color 0.15s;
+  }
+  .form-input:focus { border-color: var(--accent); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+
+  /* SCORE RING */
+  .score-ring {
+    width: 44px; height: 44px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700; flex-shrink: 0;
+  }
+  .score-ring.hot { background: rgba(249,115,22,0.15); color: var(--hot); border: 2px solid var(--hot); }
+  .score-ring.warm { background: rgba(234,179,8,0.15); color: var(--warm); border: 2px solid var(--warm); }
+  .score-ring.cold { background: rgba(107,114,128,0.1); color: var(--cold); border: 2px solid var(--cold); }
+
+  /* MANAGER STATS */
+  .manager-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+  .manager-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+  .manager-name { font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .manager-status { width: 8px; height: 8px; border-radius: 50%; }
+  .manager-status.ok { background: var(--success); }
+  .manager-status.warn { background: var(--warm); }
+  .manager-status.bad { background: var(--danger); }
+  .manager-metric { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(42,42,56,0.4); font-size: 12px; }
+  .manager-metric:last-child { border-bottom: none; }
+  .manager-metric-label { color: var(--text3); }
+  .manager-metric-val { font-weight: 500; }
+  .manager-metric-val.ok { color: var(--success); }
+  .manager-metric-val.warn { color: var(--warm); }
+  .manager-metric-val.bad { color: var(--danger); }
+
+  /* SCENARIOS */
+  .scenario-list { display: flex; flex-direction: column; gap: 12px; }
+  .scenario-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .scenario-header {
+    padding: 14px 20px; display: flex; align-items: center; gap: 12px; cursor: pointer;
+  }
+  .scenario-icon { font-size: 20px; }
+  .scenario-name { flex: 1; font-size: 14px; font-weight: 500; }
+  .scenario-toggle {
+    display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text3);
+  }
+  .toggle-switch {
+    width: 36px; height: 20px; border-radius: 10px; background: var(--bg3);
+    border: 1px solid var(--border); position: relative; cursor: pointer;
+    transition: background 0.2s;
+  }
+  .toggle-switch.on { background: var(--accent); border-color: var(--accent); }
+  .toggle-knob {
+    position: absolute; top: 2px; left: 2px; width: 14px; height: 14px;
+    border-radius: 50%; background: #fff; transition: left 0.2s;
+  }
+  .toggle-switch.on .toggle-knob { left: 18px; }
+  .scenario-steps { padding: 0 20px 16px; border-top: 1px solid var(--border); display: none; }
+  .scenario-steps.open { display: block; }
+  .scenario-step { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(42,42,56,0.4); }
+  .scenario-step:last-child { border-bottom: none; }
+  .step-when { font-size: 11px; color: var(--accent2); width: 80px; flex-shrink: 0; margin-top: 1px; }
+  .step-what { font-size: 12px; color: var(--text2); }
+
+  /* EMPTY STATE */
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text3); }
+  .empty-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-text { font-size: 14px; }
+
+  /* SEARCH */
+  .search-input {
+    padding: 7px 12px 7px 32px; border-radius: 8px;
+    background: var(--bg3); border: 1px solid var(--border); color: var(--text);
+    font-size: 13px; font-family: inherit; outline: none; width: 220px;
+    transition: border-color 0.15s;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-wrap { position: relative; }
+  .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 13px; }
+
+  .divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+  /* CHANNEL BADGE */
+  .channel { font-size: 11px; padding: 2px 7px; border-radius: 4px; background: var(--bg3); color: var(--text3); }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-title">Орбита</div>
+    <div class="logo-sub">CRM · Образование</div>
+  </div>
+  <nav class="nav">
+    <div class="nav-item active" onclick="showPage('dashboard')">
+      <span class="nav-icon">◉</span> Дашборд
+    </div>
+    <div class="nav-item" onclick="showPage('leads')">
+      <span class="nav-icon">◈</span> Лиды
+      <span class="nav-badge" id="leads-badge">12</span>
+    </div>
+    <div class="nav-item" onclick="showPage('funnel')">
+      <span class="nav-icon">⬡</span> Воронка
+    </div>
+    <div class="nav-item" onclick="showPage('tasks')">
+      <span class="nav-icon">◻</span> Задачи
+      <span class="nav-badge" id="tasks-badge">3</span>
+    </div>
+    <div class="nav-item" onclick="showPage('scenarios')">
+      <span class="nav-icon">⟳</span> Сценарии
+    </div>
+    <div class="nav-item" onclick="showPage('managers')">
+      <span class="nav-icon">◑</span> Менеджеры
+    </div>
+    <div class="nav-item" onclick="showPage('reports')">
+      <span class="nav-icon">▣</span> Отчёты
+    </div>
+  </nav>
+  <div class="sidebar-bottom">
+    <div class="user-pill">
+      <div class="user-avatar">РД</div>
+      <div>
+        <div class="user-name">Руководитель</div>
+        <div class="user-role">Полный доступ</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="topbar">
+    <div class="page-title" id="page-title">Дашборд</div>
+    <div class="topbar-actions">
+      <button class="btn btn-ghost" onclick="openModal()">+ Новый лид</button>
+      <button class="btn btn-primary">Экспорт</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <!-- ALERTS -->
+      <div class="alerts-list">
+        <div class="alert-item red">
+          <span class="alert-icon">🔴</span>
+          <div class="alert-text"><strong>3 лида</strong> <span>без первого контакта более 15 минут</span></div>
+          <span class="alert-action" onclick="showPage('leads')">Смотреть →</span>
+        </div>
+        <div class="alert-item yellow">
+          <span class="alert-icon">🟡</span>
+          <div class="alert-text"><strong>2 задачи</strong> <span>просрочены у менеджера Анна К.</span></div>
+          <span class="alert-action" onclick="showPage('tasks')">Смотреть →</span>
+        </div>
+        <div class="alert-item yellow">
+          <span class="alert-icon">🟡</span>
+          <div class="alert-text"><strong>Горячий лид</strong> <span>Мария П. — скоринг 84, не обработан 4 часа</span></div>
+          <span class="alert-action">Открыть →</span>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats-row">
+        <div class="stat-card purple">
+          <div class="stat-label">Новых лидов сегодня</div>
+          <div class="stat-value">14</div>
+          <div class="stat-sub">из 3 источников</div>
+          <div class="stat-delta up">↑ +3 к вчерашнему</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-label">В воронке (деньги)</div>
+          <div class="stat-value">₽2.4М</div>
+          <div class="stat-sub">89 активных сделок</div>
+          <div class="stat-delta up">↑ +240к к прошлой неделе</div>
+        </div>
+        <div class="stat-card yellow">
+          <div class="stat-label">Прогноз — этот месяц</div>
+          <div class="stat-value">₽680к</div>
+          <div class="stat-sub">план ₽800к — 85%</div>
+          <div class="stat-delta down">↓ −15% от плана</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Оплачено в этом месяце</div>
+          <div class="stat-value">₽320к</div>
+          <div class="stat-sub">14 сделок закрыто</div>
+          <div class="stat-delta up">↑ +12% к прошлому месяцу</div>
+        </div>
+      </div>
+
+      <!-- FUNNEL + SCORING -->
+      <div class="funnel-grid">
+        <div class="funnel-stages">
+          <div class="funnel-title">Воронка продаж</div>
+          <div class="stage-row">
+            <span class="stage-num">1</span>
+            <span class="stage-name">Новый лид</span>
+            <div class="stage-bar-wrap"><div class="stage-bar" style="width:100%"></div></div>
+            <span class="stage-count">42</span>
+            <span class="stage-money">—</span>
+            <span class="stage-conv">—</span>
+          </div>
+          <div class="stage-row">
+            <span class="stage-num">2</span>
+            <span class="stage-name">Первый контакт</span>
+            <div class="stage-bar-wrap"><div class="stage-bar" style="width:78%"></div></div>
+            <span class="stage-count">33</span>
+            <span class="stage-money">—</span>
+            <span class="stage-conv">78%</span>
+          </div>
+          <div class="stage-row">
+            <span class="stage-num">3</span>
+            <span class="stage-name">Квалифицирован</span>
+            <div class="stage-bar-wrap"><div class="stage-bar" style="width:57%"></div></div>
+            <span class="stage-count">24</span>
+            <span class="stage-money">₽720к</span>
+            <span class="stage-conv">73%</span>
+          </div>
+          <div class="stage-row">
+            <span class="stage-num">4</span>
+            <span class="stage-name">Консультация</span>
+            <div class="stage-bar-wrap"><div class="stage-bar" style="width:38%"></div></div>
+            <span class="stage-count">16</span>
+            <span class="stage-money">₽480к</span>
+            <span class="stage-conv">67%</span>
+          </div>
+          <div class="stage-row">
+            <span class="stage-num">5</span>
+            <span class="stage-name">КП отправлено</span>
+            <div class="stage-bar-wrap"><div class="stage-bar" style="width:26%"></div></div>
+            <span class="stage-count">11</span>
+            <span class="stage-money">₽330к</span>
+            <span class="stage-conv">69%</span>
+          </div>
+          <div class="stage-row">
+            <span class="stage-num">6</span>
+            <span class="stage-name">Договорённость</span>
+            <div class="stage-bar-wrap"><div class="stage-bar" style="width:14%"></div></div>
+            <span class="stage-count">6</span>
+            <span class="stage-money">₽180к</span>
+            <span class="stage-conv">55%</span>
+          </div>
+          <div class="stage-row">
+            <span class="stage-num">7</span>
+            <span class="stage-name">Счёт выставлен</span>
+            <div class="stage-bar-wrap"><div class="stage-bar" style="width:8%; background: var(--warm)"></div></div>
+            <span class="stage-count">4</span>
+            <span class="stage-money">₽120к</span>
+            <span class="stage-conv">67%</span>
+          </div>
+          <div class="stage-row">
+            <span class="stage-num">8</span>
+            <span class="stage-name">Оплата получена</span>
+            <div class="stage-bar-wrap"><div class="stage-bar" style="width:5%; background: var(--success)"></div></div>
+            <span class="stage-count">14</span>
+            <span class="stage-money">₽320к</span>
+            <span class="stage-conv">—</span>
+          </div>
+        </div>
+
+        <div class="scoring-panel">
+          <div class="funnel-title">Скоринг лидов</div>
+          <div class="score-item">
+            <div class="score-dot hot"></div>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:500">Горячие</div>
+              <div style="font-size:11px;color:var(--text3)">70–100 баллов · звонить срочно</div>
+            </div>
+            <div class="score-count hot">8</div>
+          </div>
+          <div class="score-item">
+            <div class="score-dot warm"></div>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:500">Тёплые</div>
+              <div style="font-size:11px;color:var(--text3)">40–69 баллов · стандартный догрев</div>
+            </div>
+            <div class="score-count warm">31</div>
+          </div>
+          <div class="score-item">
+            <div class="score-dot cold"></div>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:500">Холодные</div>
+              <div style="font-size:11px;color:var(--text3)">0–39 баллов · реанимация</div>
+            </div>
+            <div class="score-count cold">50</div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div style="font-size:12px;color:var(--text3);margin-bottom:10px">Как начисляются баллы</div>
+          <div style="font-size:11px;color:var(--text2);line-height:1.8">
+            +20 — был на консультации<br>
+            +20 — посетил вебинар до конца<br>
+            +15 — написал сам в мессенджер<br>
+            +10 — открыл письмо с ценой<br>
+            +10 — спросил про рассрочку<br>
+            +10 — изучал программу > 5 мин<br>
+            −5 — каждые 7 дней без реакции
+          </div>
+        </div>
+      </div>
+
+      <!-- FORECAST -->
+      <div class="forecast-row">
+        <div class="forecast-card">
+          <div class="forecast-label">Жёсткий прогноз</div>
+          <div class="forecast-value hard">₽300к</div>
+          <div class="forecast-desc">Договорённость + счёт выставлен</div>
+          <div class="forecast-horizon">Горизонт: 2 недели · точность ±10%</div>
+        </div>
+        <div class="forecast-card">
+          <div class="forecast-label">Мягкий прогноз</div>
+          <div class="forecast-value soft">₽380к</div>
+          <div class="forecast-desc">Консультация + КП отправлено × 35%</div>
+          <div class="forecast-horizon">Горизонт: 30–60 дней · точность ±30%</div>
+        </div>
+        <div class="forecast-card">
+          <div class="forecast-label">Весь пайплайн</div>
+          <div class="forecast-value pipe">₽2.4М</div>
+          <div class="forecast-desc">Все активные × средняя конверсия</div>
+          <div class="forecast-horizon">Горизонт: квартал · ориентир</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEADS -->
+    <div class="page" id="page-leads">
+      <div class="table-wrap">
+        <div class="table-header">
+          <div class="table-filters">
+            <button class="filter-btn active" onclick="filterLeads(this,'all')">Все</button>
+            <button class="filter-btn" onclick="filterLeads(this,'hot')">🔥 Горячие</button>
+            <button class="filter-btn" onclick="filterLeads(this,'warm')">Тёплые</button>
+            <button class="filter-btn" onclick="filterLeads(this,'cold')">Холодные</button>
+            <button class="filter-btn" onclick="filterLeads(this,'new')">Без контакта</button>
+          </div>
+          <div class="search-wrap">
+            <span class="search-icon">⌕</span>
+            <input class="search-input" placeholder="Поиск по имени, телефону..." oninput="searchLeads(this.value)">
+          </div>
+        </div>
+        <table id="leads-table">
+          <thead>
+            <tr>
+              <th>Имя</th>
+              <th>Скоринг</th>
+              <th>Этап воронки</th>
+              <th>Статус</th>
+              <th>Канал</th>
+              <th>Менеджер</th>
+              <th>Последний контакт</th>
+              <th>Сумма</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="leads-tbody">
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- FUNNEL PAGE -->
+    <div class="page" id="page-funnel">
+      <div class="stats-row">
+        <div class="stat-card purple">
+          <div class="stat-label">Общая конверсия</div>
+          <div class="stat-value">33%</div>
+          <div class="stat-sub">лид → оплата</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-label">Средний чек</div>
+          <div class="stat-value">₽22.8к</div>
+          <div class="stat-sub">за последние 30 дней</div>
+        </div>
+        <div class="stat-card yellow">
+          <div class="stat-label">Цикл сделки</div>
+          <div class="stat-value">18 дн</div>
+          <div class="stat-sub">среднее время от лида до оплаты</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-label">Потери в месяц</div>
+          <div class="stat-value">28</div>
+          <div class="stat-sub">сделок закрыто без оплаты</div>
+        </div>
+      </div>
+
+      <div class="reports-grid">
+        <div class="report-card">
+          <div class="report-card-title">Причины отказов (топ)</div>
+          <div class="rejection-list">
+            <div class="rejection-row">
+              <span class="rejection-label">Дорого / нет денег</span>
+              <div class="rejection-bar-wrap"><div class="rejection-bar" style="width:72%"></div></div>
+              <span class="rejection-pct">34%</span>
+            </div>
+            <div class="rejection-row">
+              <span class="rejection-label">Не моё время</span>
+              <div class="rejection-bar-wrap"><div class="rejection-bar" style="width:48%"></div></div>
+              <span class="rejection-pct">22%</span>
+            </div>
+            <div class="rejection-row">
+              <span class="rejection-label">Выбрал другую школу</span>
+              <div class="rejection-bar-wrap"><div class="rejection-bar" style="width:34%"></div></div>
+              <span class="rejection-pct">16%</span>
+            </div>
+            <div class="rejection-row">
+              <span class="rejection-label">Не дозвонились</span>
+              <div class="rejection-bar-wrap"><div class="rejection-bar" style="width:28%"></div></div>
+              <span class="rejection-pct">13%</span>
+            </div>
+            <div class="rejection-row">
+              <span class="rejection-label">Не устроил формат</span>
+              <div class="rejection-bar-wrap"><div class="rejection-bar" style="width:20%"></div></div>
+              <span class="rejection-pct">9%</span>
+            </div>
+            <div class="rejection-row">
+              <span class="rejection-label">Личные обстоятельства</span>
+              <div class="rejection-bar-wrap"><div class="rejection-bar" style="width:13%"></div></div>
+              <span class="rejection-pct">6%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="report-card">
+          <div class="report-card-title">Потери по этапам</div>
+          <div class="rejection-list">
+            <div class="rejection-row">
+              <span class="rejection-label">После первого контакта</span>
+              <div class="rejection-bar-wrap"><div class="rejection-bar" style="width:50%; background:var(--danger)"></div></div>
+              <span class="rejection-pct">9</span>
+            </div>
+            <div class="rejection-row">
+              <span class="rejection-label">После квалификации</span>
+              <div class="rejection-bar-wrap"><div class="rejection-bar" style="width:38%; background:var(--danger)"></div></div>
+              <span class="rejection-pct">7</span>
+            </div>
+            <div class="rejection-row">
+              <span class="rejection-label">После консультации</span>
+              <div class="rejection-bar-wrap"><div class="rejection-bar" style="width:28%; background:var(--warm)"></div></div>
+              <span class="rejection-pct">5</span>
+            </div>
+            <div class="rejection-row">
+              <span class="rejection-label">После отправки КП</span>
+              <div class="rejection-bar-wrap"><div class="rejection-bar" style="width:22%; background:var(--warm)"></div></div>
+              <span class="rejection-pct">4</span>
+            </div>
+            <div class="rejection-row">
+              <span class="rejection-label">После счёта</span>
+              <div class="rejection-bar-wrap"><div class="rejection-bar" style="width:16%; background:var(--success)"></div></div>
+              <span class="rejection-pct">3</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="report-card">
+        <div class="report-card-title">Повторные продажи</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:4px">
+          <div style="text-align:center">
+            <div style="font-size:28px;font-weight:700;color:var(--accent2)">38%</div>
+            <div style="font-size:11px;color:var(--text3)">клиентов купили 2+ раза</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:28px;font-weight:700;color:var(--success)">47 дн</div>
+            <div style="font-size:11px;color:var(--text3)">среднее время до повторной покупки</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:28px;font-weight:700;color:var(--warm)">₽34к</div>
+            <div style="font-size:11px;color:var(--text3)">средний LTV клиента</div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:28px;font-weight:700;color:var(--hot)">2.1×</div>
+            <div style="font-size:11px;color:var(--text3)">конверсия повторных vs новых</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TASKS -->
+    <div class="page" id="page-tasks">
+      <div class="tasks-grid">
+        <div class="task-col">
+          <div class="task-col-header">
+            <span class="task-col-title">🔴 Срочно (просрочено)</span>
+            <span class="task-count-badge urgent">3</span>
+          </div>
+          <div class="task-item">
+            <div class="task-check" onclick="toggleTask(this)"></div>
+            <div class="task-body">
+              <div class="task-what">Позвонить Марии П. — горячий лид, не дозвонились вчера</div>
+              <div class="task-who">Анна К. · Консультация проведена · ₽45к</div>
+            </div>
+            <span class="task-time overdue">Вчера 14:00</span>
+          </div>
+          <div class="task-item">
+            <div class="task-check" onclick="toggleTask(this)"></div>
+            <div class="task-body">
+              <div class="task-what">Отправить КП Игорю С. — ждёт 3 дня</div>
+              <div class="task-who">Дмитрий В. · КП отправлено · ₽60к</div>
+            </div>
+            <span class="task-time overdue">Вчера 16:00</span>
+          </div>
+          <div class="task-item">
+            <div class="task-check" onclick="toggleTask(this)"></div>
+            <div class="task-body">
+              <div class="task-what">Уточнить решение у Светланы Р. — счёт выставлен 7 дней</div>
+              <div class="task-who">Анна К. · Счёт выставлен · ₽28к</div>
+            </div>
+            <span class="task-time overdue">2 дня назад</span>
+          </div>
+        </div>
+
+        <div class="task-col">
+          <div class="task-col-header">
+            <span class="task-col-title">🟡 На сегодня</span>
+            <span class="task-count-badge today">5</span>
+          </div>
+          <div class="task-item">
+            <div class="task-check" onclick="toggleTask(this)"></div>
+            <div class="task-body">
+              <div class="task-what">Напомнить про вебинар завтра — отправить ссылку</div>
+              <div class="task-who">Дмитрий В. · Список 18 человек</div>
+            </div>
+            <span class="task-time today">До 18:00</span>
+          </div>
+          <div class="task-item">
+            <div class="task-check" onclick="toggleTask(this)"></div>
+            <div class="task-body">
+              <div class="task-what">Позвонить Ольге Т. — вернулась с отпуска, договорились</div>
+              <div class="task-who">Анна К. · Отложен · ₽35к</div>
+            </div>
+            <span class="task-time today">До 15:00</span>
+          </div>
+          <div class="task-item">
+            <div class="task-check" onclick="toggleTask(this)"></div>
+            <div class="task-body">
+              <div class="task-what">Провести консультацию с новым лидом — Telegram</div>
+              <div class="task-who">Дмитрий В. · Квалифицирован</div>
+            </div>
+            <span class="task-time future">12:00 — 12:45</span>
+          </div>
+          <div class="task-item">
+            <div class="task-check" onclick="toggleTask(this)"></div>
+            <div class="task-body">
+              <div class="task-what">Обработать 3 новых лида с сайта</div>
+              <div class="task-who">Анна К. · Новые лиды</div>
+            </div>
+            <span class="task-time today">Сегодня</span>
+          </div>
+          <div class="task-item">
+            <div class="task-check" onclick="toggleTask(this)"></div>
+            <div class="task-body">
+              <div class="task-what">Отправить резюме после вчерашней консультации</div>
+              <div class="task-who">Дмитрий В. · Наталья К. · ₽55к</div>
+            </div>
+            <span class="task-time today">До 12:00</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SCENARIOS -->
+    <div class="page" id="page-scenarios">
+      <div class="scenario-list">
+
+        <div class="scenario-card">
+          <div class="scenario-header" onclick="toggleScenario(this)">
+            <span class="scenario-icon">⚡</span>
+            <span class="scenario-name">После заявки (первые 48 часов)</span>
+            <div class="scenario-toggle">
+              <div class="toggle-switch on" onclick="event.stopPropagation();toggleSwitch(this)"><div class="toggle-knob"></div></div>
+              <span style="color:var(--success)">Активен</span>
+            </div>
+          </div>
+          <div class="scenario-steps">
+            <div class="scenario-step">
+              <span class="step-when">Сразу</span>
+              <span class="step-what">Автоответ: подтверждение заявки + полезный материал</span>
+            </div>
+            <div class="scenario-step">
+              <span class="step-when">+1 час</span>
+              <span class="step-what">Задача менеджеру: позвонить</span>
+            </div>
+            <div class="scenario-step">
+              <span class="step-when">+3 часа</span>
+              <span class="step-what">Если не дозвонился — повторная задача</span>
+            </div>
+            <div class="scenario-step">
+              <span class="step-when">+24 часа</span>
+              <span class="step-what">Автосообщение в мессенджер</span>
+            </div>
+            <div class="scenario-step">
+              <span class="step-when">+48 часов</span>
+              <span class="step-what">Письмо: история выпускника</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="scenario-card">
+          <div class="scenario-header" onclick="toggleScenario(this)">
+            <span class="scenario-icon">🎓</span>
+            <span class="scenario-name">Приглашение на вебинар</span>
+            <div class="scenario-toggle">
+              <div class="toggle-switch on" onclick="event.stopPropagation();toggleSwitch(this)"><div class="toggle-knob"></div></div>
+              <span style="color:var(--success)">Активен</span>
+            </div>
+          </div>
+          <div class="scenario-steps">
+            <div class="scenario-step">
+              <span class="step-when">−3 дня</span>
+              <span class="step-what">Письмо: анонс вебинара и его ценность</span>
+            </div>
+            <div class="scenario-step">
+              <span class="step-when">−1 день</span>
+              <span class="step-what">Напоминание с кратким планом</span>
+            </div>
+            <div class="scenario-step">
+              <span class="step-when">−2 часа</span>
+              <span class="step-what">Сообщение в мессенджер со ссылкой</span>
+            </div>
+            <div class="scenario-step">
+              <span class="step-when">+10 мин</span>
+              <span class="step-what">Напоминание тем, кто ещё не подключился</span>
+            </div>
+            <div class="scenario-step">
+              <span class="step-when">+1 день</span>
+              <span class="step-what">Запись + спецпредложение для тех, кто был</span>
+            </div>
+            <div class="scenario-step">
+              <span class="step-when">+3 дня</span>
+              <span class="step-what">Дожим для тех, кто не купил сразу</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="scenario-card">
+          <div class="scenario-header" onclick="toggleScenario(this)">
+            <span class="scenario-icon">💬</span>
+            <span class="scenario-name">После консультации («думает»)</span>
+            <div class="scenario-toggle">
+              <div class="toggle-switch on" onclick="event.stopPropagation();toggleSwitch(this)"><div class="toggle-knob"></div></div>
+              <span style="color:var(--success)">Активен</span>
+            </div>
+          </div>
+          <div class="scenario-steps">
+            <div class="scenario-step">
+              <span class="step-when">День 1</span>
+              <span class="step-what">Резюме разговора + что решает программа конкретно для него</span>
+            </div>
+            <div class="scenario-step">
+              <span class="step-when">День 3</span>
+              <span class="step-what">Кейс похожего клиента</span>
+            </div>
+            <div class="scenario-step">
+              <span class="step-when">День 7</span>
+              <span class="step-what">Письмо с ответами на частые возражения</span>
+            </div>
+            <div class="scenario-step">
+              <span class="step-when">День 14</span>
+              <span class="step-what">Сообщение: «что мешает принять решение?»</span>
+            </div>
+            <div class="scenario-step">
+              <span class="step-when">День 21</span>
+              <span class="step-what">Финальное предложение с дедлайном или бонусом</span>
+            </div>
+            <div class="scenario-step">
+              <span class="step-when">День 30</span>
+              <span class="step-what">Перевод в «отложен» — задача менеджеру через 30 дней</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="scenario-card">
+          <div class="scenario-header" onclick="toggleScenario(this)">
+            <span class="scenario-icon">💳</span>
+            <span class="scenario-name">Брошенная оплата (счёт не оплачен)</span>
+            <div class="scenario-toggle">
+              <div class="toggle-switch on" onclick="event.stopPropagation();toggleSwitch(this)"><div class="toggle-knob"></div></div>
+              <span style="color:var(--success)">Активен</span>
+            </div>
+          </div>
+          <div class="scenario-steps">
+            <div class="scenario-step">
+              <span class="step-when">+2 часа</span>
+              <span class="step-what">Напоминание об оплате</span>
+            </div>
+            <div class="scenario-step">
+              <span class="step-when">+24 часа</span>
+              <span class="step-what">Задача менеджеру позвонить</span>
+            </div>
+            <div class="scenario-step">
+              <span class="step-when">+3 дня</span>
+              <span class="step-what">Письмо: место может быть занято</span>
+            </div>
+            <div class="scenario-step">
+              <span class="step-when">+7 дней</span>
+              <span class="step-what">Менеджер звонит: «что случилось?»</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="scenario-card">
+          <div class="scenario-header" onclick="toggleScenario(this)">
+            <span class="scenario-icon">❄️</span>
+            <span class="scenario-name">Реанимация холодных</span>
+            <div class="scenario-toggle">
+              <div class="toggle-switch" onclick="event.stopPropagation();toggleSwitch(this)"><div class="toggle-knob"></div></div>
+              <span style="color:var(--text3)">Выключен</span>
+            </div>
+          </div>
+          <div class="scenario-steps">
+            <div class="scenario-step">
+              <span class="step-when">Каждые 30 дн</span>
+              <span class="step-what">Контентное письмо без продажи (польза, кейс, инсайт)</span>
+            </div>
+            <div class="scenario-step">
+              <span class="step-when">Каждые 90 дн</span>
+              <span class="step-what">Менеджер просматривает список: звонить или архивировать</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- MANAGERS -->
+    <div class="page" id="page-managers">
+      <div class="alerts-list" style="margin-bottom:20px">
+        <div class="alert-item red">
+          <span class="alert-icon">⚠️</span>
+          <div class="alert-text"><strong>Анна К.</strong> <span>— 2 просроченные задачи, время реакции на лиды 42 мин (норма 15 мин)</span></div>
+        </div>
+      </div>
+
+      <div class="manager-grid">
+        <div class="manager-card">
+          <div class="manager-name">
+            <div class="manager-status ok"></div>
+            Дмитрий В.
+          </div>
+          <div class="manager-metric">
+            <span class="manager-metric-label">Активных сделок</span>
+            <span class="manager-metric-val">24</span>
+          </div>
+          <div class="manager-metric">
+            <span class="manager-metric-label">Время реакции (ср.)</span>
+            <span class="manager-metric-val ok">8 мин</span>
+          </div>
+          <div class="manager-metric">
+            <span class="manager-metric-label">Просроченных задач</span>
+            <span class="manager-metric-val ok">0</span>
+          </div>
+          <div class="manager-metric">
+            <span class="manager-metric-label">Конверсия лид→оплата</span>
+            <span class="manager-metric-val ok">38%</span>
+          </div>
+          <div class="manager-metric">
+            <span class="manager-metric-label">Выручка за месяц</span>
+            <span class="manager-metric-val">₽192к</span>
+          </div>
+        </div>
+
+        <div class="manager-card">
+          <div class="manager-name">
+            <div class="manager-status bad"></div>
+            Анна К.
+          </div>
+          <div class="manager-metric">
+            <span class="manager-metric-label">Активных сделок</span>
+            <span class="manager-metric-val">31</span>
+          </div>
+          <div class="manager-metric">
+            <span class="manager-metric-label">Время реакции (ср.)</span>
+            <span class="manager-metric-val bad">42 мин</span>
+          </div>
+          <div class="manager-metric">
+            <span class="manager-metric-label">Просроченных задач</span>
+            <span class="manager-metric-val bad">2</span>
+          </div>
+          <div class="manager-metric">
+            <span class="manager-metric-label">Конверсия лид→оплата</span>
+            <span class="manager-metric-val warn">24%</span>
+          </div>
+          <div class="manager-metric">
+            <span class="manager-metric-label">Выручка за месяц</span>
+            <span class="manager-metric-val">₽128к</span>
+          </div>
+        </div>
+
+        <div class="manager-card">
+          <div class="manager-name">
+            <div class="manager-status warn"></div>
+            Ирина М.
+          </div>
+          <div class="manager-metric">
+            <span class="manager-metric-label">Активных сделок</span>
+            <span class="manager-metric-val">18</span>
+          </div>
+          <div class="manager-metric">
+            <span class="manager-metric-label">Время реакции (ср.)</span>
+            <span class="manager-metric-val ok">12 мин</span>
+          </div>
+          <div class="manager-metric">
+            <span class="manager-metric-label">Просроченных задач</span>
+            <span class="manager-metric-val warn">1</span>
+          </div>
+          <div class="manager-metric">
+            <span class="manager-metric-label">Конверсия лид→оплата</span>
+            <span class="manager-metric-val ok">31%</span>
+          </div>
+          <div class="manager-metric">
+            <span class="manager-metric-label">Выручка за месяц</span>
+            <span class="manager-metric-val">₽96к</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="report-card">
+        <div class="report-card-title">Нормативы контроля</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+          <div class="report-row"><span class="report-row-label">Первый контакт после заявки</span><span class="report-row-value">до 15 минут</span></div>
+          <div class="report-row"><span class="report-row-label">Просроченных задач</span><span class="report-row-value">не более 10%</span></div>
+          <div class="report-row"><span class="report-row-label">Сделки без следующего шага</span><span class="report-row-value">0 — красный флаг</span></div>
+          <div class="report-row"><span class="report-row-label">Сделка без движения</span><span class="report-row-value">эскалация через 14 дней</span></div>
+          <div class="report-row"><span class="report-row-label">Горячий лид без обработки</span><span class="report-row-value">уведомление через 4 часа</span></div>
+          <div class="report-row"><span class="report-row-label">Закрытие без причины отказа</span><span class="report-row-value">запрещено системой</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORTS -->
+    <div class="page" id="page-reports">
+      <div class="forecast-row" style="margin-bottom:20px">
+        <div class="forecast-card">
+          <div class="forecast-label">Выручка — факт</div>
+          <div class="forecast-value hard">₽320к</div>
+          <div class="forecast-desc">за текущий месяц</div>
+          <div class="forecast-horizon">план ₽800к · выполнение 40%</div>
+        </div>
+        <div class="forecast-card">
+          <div class="forecast-label">Средний чек</div>
+          <div class="forecast-value soft">₽22.8к</div>
+          <div class="forecast-desc">14 оплаченных сделок</div>
+          <div class="forecast-horizon">+8% к прошлому месяцу</div>
+        </div>
+        <div class="forecast-card">
+          <div class="forecast-label">Стоимость лида</div>
+          <div class="forecast-value pipe">₽1.4к</div>
+          <div class="forecast-desc">средняя по всем каналам</div>
+          <div class="forecast-horizon">ROI рекламы × 16</div>
+        </div>
+      </div>
+
+      <div class="reports-grid">
+        <div class="report-card">
+          <div class="report-card-title">Источники лидов</div>
+          <div class="report-row"><span class="report-row-label">Instagram/Reels</span><span class="report-row-value" style="color:var(--accent2)">38%</span></div>
+          <div class="report-row"><span class="report-row-label">Рекомендации</span><span class="report-row-value" style="color:var(--success)">24%</span></div>
+          <div class="report-row"><span class="report-row-label">Telegram-канал</span><span class="report-row-value" style="color:var(--warm)">19%</span></div>
+          <div class="report-row"><span class="report-row-label">Сайт / SEO</span><span class="report-row-value" style="color:var(--text2)">12%</span></div>
+          <div class="report-row"><span class="report-row-label">Вебинары</span><span class="report-row-value" style="color:var(--text3)">7%</span></div>
+        </div>
+
+        <div class="report-card">
+          <div class="report-card-title">Конверсия по источникам (лид → оплата)</div>
+          <div class="report-row"><span class="report-row-label">Рекомендации</span><span class="report-row-value" style="color:var(--success)">52%</span></div>
+          <div class="report-row"><span class="report-row-label">Вебинары</span><span class="report-row-value" style="color:var(--success)">44%</span></div>
+          <div class="report-row"><span class="report-row-label">Telegram-канал</span><span class="report-row-value" style="color:var(--warm)">31%</span></div>
+          <div class="report-row"><span class="report-row-label">Сайт / SEO</span><span class="report-row-value" style="color:var(--warm)">24%</span></div>
+          <div class="report-row"><span class="report-row-label">Instagram/Reels</span><span class="report-row-value" style="color:var(--danger)">16%</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- MODAL: Новый лид -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Новый лид</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Имя</label>
+          <input class="form-input" placeholder="Имя клиента">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Телефон</label>
+          <input class="form-input" placeholder="+7 (___) ___-__-__">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Источник</label>
+          <select class="form-input">
+            <option>Instagram</option>
+            <option>Telegram</option>
+            <option>Сайт</option>
+            <option>Рекомендация</option>
+            <option>Вебинар</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Менеджер</label>
+          <select class="form-input">
+            <option>Дмитрий В.</option>
+            <option>Анна К.</option>
+            <option>Ирина М.</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Продукт / интерес</label>
+        <select class="form-input">
+          <option>Флагманская программа</option>
+          <option>Интенсив</option>
+          <option>Наставничество 1:1</option>
+          <option>Вебинар (бесплатно)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Комментарий</label>
+        <input class="form-input" placeholder="Откуда узнал, запрос...">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Отмена</button>
+      <button class="btn btn-primary" onclick="addLead()">Создать лид</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// DATA
+const leads = [
+  { name: 'Мария П.', score: 84, scoreClass: 'hot', stage: 'Консультация', status: 'active', statusLabel: 'Активный', channel: 'Instagram', manager: 'Анна К.', lastContact: '4 часа назад', amount: '₽45к' },
+  { name: 'Игорь С.', score: 67, scoreClass: 'warm', stage: 'КП отправлено', status: 'thinking', statusLabel: 'Думает', channel: 'Telegram', manager: 'Дмитрий В.', lastContact: '3 дня назад', amount: '₽60к' },
+  { name: 'Светлана Р.', score: 78, scoreClass: 'hot', stage: 'Счёт выставлен', status: 'thinking', statusLabel: 'Думает', channel: 'Сайт', manager: 'Анна К.', lastContact: 'Вчера', amount: '₽28к' },
+  { name: 'Ольга Т.', score: 55, scoreClass: 'warm', stage: 'Квалифицирован', status: 'postponed', statusLabel: 'Отложил', channel: 'Рекомендация', manager: 'Анна К.', lastContact: '30 дней назад', amount: '₽35к' },
+  { name: 'Андрей Н.', score: 22, scoreClass: 'cold', stage: 'Первый контакт', status: 'unreachable', statusLabel: 'Недоступен', channel: 'Instagram', manager: 'Ирина М.', lastContact: '12 дней назад', amount: '—' },
+  { name: 'Наталья К.', score: 71, scoreClass: 'hot', stage: 'КП отправлено', status: 'thinking', statusLabel: 'Думает', channel: 'Вебинар', manager: 'Дмитрий В.', lastContact: 'Вчера', amount: '₽55к' },
+  { name: 'Елена Ф.', score: 48, scoreClass: 'warm', stage: 'Новый лид', status: 'active', statusLabel: 'Активный', channel: 'Telegram', manager: 'Дмитрий В.', lastContact: '1 час назад', amount: '—' },
+  { name: 'Виктор Г.', score: 33, scoreClass: 'cold', stage: 'Новый лид', status: 'active', statusLabel: 'Активный', channel: 'Сайт', manager: 'Ирина М.', lastContact: '2 часа назад', amount: '—' },
+  { name: 'Анастасия Л.', score: 91, scoreClass: 'hot', stage: 'Договорённость', status: 'repeat', statusLabel: 'Повторный', channel: 'Рекомендация', manager: 'Дмитрий В.', lastContact: 'Сегодня', amount: '₽80к' },
+];
+
+let currentFilter = 'all';
+let currentSearch = '';
+
+function renderLeads() {
+  const tbody = document.getElementById('leads-tbody');
+  let filtered = leads.filter(l => {
+    const matchFilter = currentFilter === 'all' ||
+      (currentFilter === 'hot' && l.scoreClass === 'hot') ||
+      (currentFilter === 'warm' && l.scoreClass === 'warm') ||
+      (currentFilter === 'cold' && l.scoreClass === 'cold') ||
+      (currentFilter === 'new' && l.stage === 'Новый лид');
+    const matchSearch = !currentSearch ||
+      l.name.toLowerCase().includes(currentSearch.toLowerCase());
+    return matchFilter && matchSearch;
+  });
+
+  tbody.innerHTML = filtered.map(l => `
+    <tr>
+      <td><strong>${l.name}</strong></td>
+      <td>
+        <div class="score-badge ${l.scoreClass}">
+          ${l.scoreClass === 'hot' ? '🔥' : l.scoreClass === 'warm' ? '◉' : '❄'}
+          ${l.score}
+        </div>
+      </td>
+      <td><span class="stage-pill">${l.stage}</span></td>
+      <td><span class="status-badge ${l.status}">${l.statusLabel}</span></td>
+      <td><span class="channel">${l.channel}</span></td>
+      <td style="color:var(--text2)">${l.manager}</td>
+      <td style="color:var(--text3);font-size:12px">${l.lastContact}</td>
+      <td style="color:var(--success);font-weight:500">${l.amount}</td>
+      <td><button class="action-btn">Открыть</button></td>
+    </tr>
+  `).join('');
+}
+
+function filterLeads(btn, filter) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderLeads();
+}
+
+function searchLeads(val) {
+  currentSearch = val;
+  renderLeads();
+}
+
+// NAV
+const titles = {
+  dashboard: 'Дашборд',
+  leads: 'Лиды',
+  funnel: 'Воронка',
+  tasks: 'Задачи',
+  scenarios: 'Сценарии догрева',
+  managers: 'Контроль менеджеров',
+  reports: 'Отчёты руководителя'
+};
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.getElementById('page-title').textContent = titles[id];
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.textContent.trim().toLowerCase().includes(titles[id].toLowerCase().slice(0,4))) {
+      n.classList.add('active');
+    }
+  });
+  if (id === 'leads') renderLeads();
+}
+
+// TASKS
+function toggleTask(el) {
+  el.classList.toggle('done');
+}
+
+// MODAL
+function openModal() { document.getElementById('modal').classList.add('open'); }
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function addLead() {
+  closeModal();
+  document.getElementById('leads-badge').textContent = '13';
+}
+
+document.getElementById('modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// SCENARIOS
+function toggleScenario(header) {
+  const steps = header.nextElementSibling;
+  steps.classList.toggle('open');
+}
+
+function toggleSwitch(sw) {
+  sw.classList.toggle('on');
+  const span = sw.nextElementSibling;
+  if (sw.classList.contains('on')) {
+    span.textContent = 'Активен';
+    span.style.color = 'var(--success)';
+  } else {
+    span.textContent = 'Выключен';
+    span.style.color = 'var(--text3)';
+  }
+}
+
+// INIT
+renderLeads();
+</script>
+</body>
+</html>
